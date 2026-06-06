@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn & Task Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon" id="brandIcon">📚</div>
+        <div>
+          <h1 id="brandTitle">Learn Tracker</h1>
+          <p id="brandSubtitle">Projects & tasks</p>
+        </div>
+      </div>
+
+      <div class="project-switcher">
+        <span class="switcher-label">Project</span>
+        <div class="project-tabs" id="projectTabs"></div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-view="overview">Overview</button>
+        <button class="nav-btn" data-view="advisor">Advisor Mindset</button>
+        <button class="nav-btn" data-view="tasks">Tasks</button>
+        <button class="nav-btn" data-view="notes">Notes</button>
+        <button class="nav-btn" data-view="architecture">Architecture</button>
+        <button class="nav-btn" data-view="glossary">Glossary</button>
+      </nav>
+
+      <div class="progress-card">
+        <span class="progress-label">Project progress</span>
+        <div class="progress-bar"><div class="progress-fill" id="overallProgress"></div></div>
+        <span class="progress-text" id="progressText">0 / 0 tasks</span>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="view active" id="view-overview">
+        <header class="page-header">
+          <h2 id="overviewTitle">Project Vision</h2>
+          <p id="overviewSubtitle"></p>
+        </header>
+        <div class="advisor-banner" id="advisorBanner"></div>
+        <div class="vision-card" id="visionCard"></div>
+        <div class="goals-grid" id="goalsGrid"></div>
+        <div class="phases-section">
+          <h3>Learning Phases</h3>
+          <div class="phases-list" id="phasesList"></div>
+        </div>
+      </section>
+
+      <section class="view" id="view-advisor">
+        <header class="page-header">
+          <h2>Advisor Mindset</h2>
+          <p>Trusted Advisor + Partner Mindset — how Solution Architects build real customer relationships</p>
+        </header>
+        <div id="advisorContent"></div>
+      </section>
+
+      <section class="view" id="view-tasks">
+        <header class="page-header">
+          <h2>Tasks</h2>
+          <p>Work through each phase — check off as you learn and build</p>
+        </header>
+        <div class="toolbar">
+          <select id="phaseFilter">
+            <option value="all">All phases</option>
+          </select>
+          <select id="statusFilter">
+            <option value="all">All status</option>
+            <option value="pending">Pending</option>
+            <option value="done">Completed</option>
+          </select>
+          <button class="btn btn-primary" id="addTaskBtn">+ Add Task</button>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </section>
+
+      <section class="view" id="view-notes">
+        <header class="page-header">
+          <h2>Learning Notes</h2>
+          <p>Capture what you learn — concepts, commands, insights</p>
+        </header>
+        <div class="note-form">
+          <input type="text" id="noteTitle" placeholder="Note title" />
+          <select id="notePhase">
+            <option value="general">General</option>
+          </select>
+          <textarea id="noteContent" placeholder="Write your notes here..."></textarea>
+          <button class="btn btn-primary" id="saveNoteBtn">Save Note</button>
+        </div>
+        <div class="notes-list" id="notesList"></div>
+      </section>
+
+      <section class="view" id="view-architecture">
+        <header class="page-header">
+          <h2>System Architecture</h2>
+          <p id="archSubtitle">Reference design</p>
+        </header>
+        <div class="arch-diagram">
+          <pre class="diagram-text" id="archDiagram"></pre>
+        </div>
+        <div class="arch-components" id="archComponents"></div>
+        <div class="mqtt-topics" id="archExtra"></div>
+      </section>
+
+      <section class="view" id="view-glossary">
+        <header class="page-header">
+          <h2>Glossary</h2>
+          <p id="glossarySubtitle">Key terms</p>
+        </header>
+        <div class="glossary-list" id="glossaryList"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="taskModal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Add Task</h3>
+      <input type="hidden" id="taskId" />
+      <label>Title</label>
+      <input type="text" id="taskTitle" placeholder="What do you need to do?" />
+      <label>Phase</label>
+      <select id="taskPhase"></select>
+      <label>Priority</label>
+      <select id="taskPriority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+      <label>Description</label>
+      <textarea id="taskDesc" placeholder="Details, links, acceptance criteria..."></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancelTaskBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveTaskBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
