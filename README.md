@@ -16,7 +16,13 @@ Personal learning and task tracker for technical projects — built to learn by 
 - Glossary per project
 - **Advisor Mindset** — Trusted Advisor + Partner Mindset for solution design
 
-## How to run
+## Live app
+
+**https://immanuel2504.github.io/tech-project-learn-tracker/**
+
+(GitHub Pages — may take 1–2 minutes after each push to update.)
+
+## How to run locally
 
 ### Option 1 — No server (easiest)
 
