@@ -1,4 +1,20 @@
-const STORAGE_KEY = "learnTracker_v2";
+const STORAGE_KEY = "learnTracker_v3";
+
+const DEFAULT_HABITS = [
+  { id: "habit_study", icon: "📖", title: "Study 30 minutes", desc: "Read docs, watch a tutorial, or explore a concept from your current phase." },
+  { id: "habit_task", icon: "✅", title: "Complete 1 learning task", desc: "Check off at least one task from your project task list today." },
+  { id: "habit_note", icon: "📝", title: "Write 1 learning note", desc: "Capture something you learned — a definition, command, or insight." },
+  { id: "habit_build", icon: "🏗️", title: "Build / practice 20 min", desc: "Hands-on: code, draw architecture, configure a tool, or run an experiment." },
+  { id: "habit_review", icon: "🔍", title: "Review & reflect 10 min", desc: "Re-read notes, glossary, or architecture. Ask: what do I still not understand?" },
+];
+
+const HABIT_TIPS = [
+  "Start small — 15 minutes daily beats 3 hours once a week.",
+  "Same time each day builds automaticity (e.g. morning coffee + study).",
+  "Link habits to your project phase — study what you're building next.",
+  "Missed a day? Don't quit — just restart tomorrow. Streaks recover.",
+  "Pair \"Study\" with \"Note\" — learn something, then write it down.",
+];
 
 const ADVISOR = {
   trustedQuote: "Let's first understand your problem. Then we'll determine whether our software is the right solution.",
@@ -373,10 +389,12 @@ const PROJECTS = {
 let state = loadState();
 
 function loadState() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return ensureAllProjects(JSON.parse(saved));
-  } catch (_) {}
+  for (const key of [STORAGE_KEY, "learnTracker_v2"]) {
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) return ensureAllProjects(JSON.parse(saved));
+    } catch (_) {}
+  }
 
   const old = localStorage.getItem("foodMfgIoT_tracker_v1");
   if (old) {
@@ -409,6 +427,22 @@ function ensureAllProjects(state) {
   if (!state.currentProject || !PROJECTS[state.currentProject]) {
     state.currentProject = "foodMfg";
   }
+  ensureHabits(state);
+  return state;
+}
+
+function ensureHabits(state) {
+  if (!state.habitLog) state.habitLog = {};
+  if (!state.habits || !state.habits.length) {
+    state.habits = DEFAULT_HABITS.map((h) => ({ ...h, active: true }));
+    return state;
+  }
+  const ids = new Set(state.habits.map((h) => h.id));
+  DEFAULT_HABITS.forEach((h) => {
+    if (!ids.has(h.id)) {
+      state.habits.push({ ...h, active: true });
+    }
+  });
   return state;
 }
 
@@ -439,7 +473,101 @@ function createDefaultState() {
       notes: [],
     };
   });
-  return { currentProject: "foodMfg", projects };
+  const state = { currentProject: "foodMfg", projects };
+  ensureHabits(state);
+  return state;
+}
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function logKey(habitId, date) {
+  return habitId + "_" + date;
+}
+
+function isHabitDone(habitId, date) {
+  return !!state.habitLog[logKey(habitId, date)];
+}
+
+function getActiveHabits() {
+  return state.habits.filter((h) => h.active !== false);
+}
+
+function getTodayHabitProgress() {
+  const habits = getActiveHabits();
+  const today = todayKey();
+  const done = habits.filter((h) => isHabitDone(h.id, today)).length;
+  return { done, total: habits.length };
+}
+
+function getDayScore(date) {
+  const habits = getActiveHabits();
+  if (!habits.length) return 0;
+  const done = habits.filter((h) => isHabitDone(h.id, date)).length;
+  return done / habits.length;
+}
+
+function getOverallStreak() {
+  const habits = getActiveHabits();
+  if (!habits.length) return 0;
+
+  let streak = 0;
+  const d = new Date();
+  const today = todayKey();
+  const todayScore = getDayScore(today);
+
+  if (todayScore < 0.5) {
+    d.setDate(d.getDate() - 1);
+  }
+
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    if (getDayScore(key) >= 0.5) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function getHabitStreak(habitId) {
+  let streak = 0;
+  const d = new Date();
+  const today = todayKey();
+
+  if (!isHabitDone(habitId, today)) {
+    d.setDate(d.getDate() - 1);
+  }
+
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    if (isHabitDone(habitId, key)) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function getLast7Days() {
+  const days = [];
+  const d = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const copy = new Date(d);
+    copy.setDate(copy.getDate() - i);
+    days.push(copy.toISOString().slice(0, 10));
+  }
+  return days;
+}
+
+function formatDayLabel(dateStr) {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-IN", { weekday: "short" });
 }
 
 function migrateFromV1(old) {
@@ -501,6 +629,8 @@ function switchProject(projectId) {
   renderPhases();
   renderTasks();
   renderNotes();
+  renderHabits();
+  updateHabitSidebar();
 }
 
 function renderProjectTabs() {
@@ -700,6 +830,127 @@ function updateProgress() {
   document.getElementById("progressText").textContent = done + " / " + total + " tasks (" + pct + "%)";
 }
 
+function updateHabitSidebar() {
+  const { done, total } = getTodayHabitProgress();
+  const streak = getOverallStreak();
+  document.getElementById("habitTodayCount").textContent = done + " / " + total;
+  document.getElementById("habitStreakText").textContent =
+    "🔥 " + streak + " day" + (streak === 1 ? "" : "s") + " streak";
+}
+
+function renderHabits() {
+  const habits = getActiveHabits();
+  const today = todayKey();
+  const { done, total } = getTodayHabitProgress();
+  const streak = getOverallStreak();
+  const days = getLast7Days();
+
+  document.getElementById("habitStats").innerHTML = `
+    <article class="habit-stat-card">
+      <span class="habit-stat-num">${done}/${total}</span>
+      <span class="habit-stat-label">Done today</span>
+    </article>
+    <article class="habit-stat-card streak">
+      <span class="habit-stat-num">🔥 ${streak}</span>
+      <span class="habit-stat-label">Day streak</span>
+    </article>
+    <article class="habit-stat-card">
+      <span class="habit-stat-num">${Math.round((done / (total || 1)) * 100)}%</span>
+      <span class="habit-stat-label">Today's score</span>
+    </article>`;
+
+  const list = document.getElementById("habitList");
+  if (!habits.length) {
+    list.innerHTML = '<div class="empty-state">No habits yet. Add your first learning habit!</div>';
+  } else {
+    list.innerHTML = habits
+      .map((h) => {
+        const doneToday = isHabitDone(h.id, today);
+        const hStreak = getHabitStreak(h.id);
+        const weekCells = days
+          .map((d) => {
+            const filled = isHabitDone(h.id, d);
+            const isToday = d === today;
+            return `<span class="week-cell ${filled ? "done" : ""} ${isToday ? "today" : ""}" title="${d}"></span>`;
+          })
+          .join("");
+        return `
+        <div class="habit-item ${doneToday ? "completed" : ""}" data-id="${h.id}">
+          <button class="habit-check-btn ${doneToday ? "checked" : ""}" title="Mark done today">${doneToday ? "✓" : ""}</button>
+          <div class="habit-body">
+            <div class="habit-header">
+              <span class="habit-icon">${escapeHtml(h.icon || "📌")}</span>
+              <span class="habit-title">${escapeHtml(h.title)}</span>
+              <span class="habit-streak-badge">🔥 ${hStreak}</span>
+            </div>
+            <p class="habit-desc">${escapeHtml(h.desc || "")}</p>
+            <div class="habit-week">
+              <span class="week-label">Last 7 days</span>
+              <div class="week-cells">${weekCells}</div>
+            </div>
+          </div>
+          <div class="habit-actions">
+            <button class="btn btn-ghost btn-sm edit-habit">Edit</button>
+            <button class="btn btn-ghost btn-sm delete-habit">Delete</button>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    list.querySelectorAll(".habit-check-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.closest(".habit-item").dataset.id;
+        const key = logKey(id, today);
+        if (state.habitLog[key]) {
+          delete state.habitLog[key];
+        } else {
+          state.habitLog[key] = true;
+        }
+        saveState();
+        renderHabits();
+        updateHabitSidebar();
+      });
+    });
+
+    list.querySelectorAll(".edit-habit").forEach((btn) => {
+      btn.addEventListener("click", () => openHabitModal(btn.closest(".habit-item").dataset.id));
+    });
+
+    list.querySelectorAll(".delete-habit").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.closest(".habit-item").dataset.id;
+        if (confirm("Delete this habit?")) {
+          state.habits = state.habits.filter((h) => h.id !== id);
+          Object.keys(state.habitLog).forEach((k) => {
+            if (k.startsWith(id + "_")) delete state.habitLog[k];
+          });
+          saveState();
+          renderHabits();
+          updateHabitSidebar();
+        }
+      });
+    });
+  }
+
+  document.getElementById("habitTips").innerHTML = `
+    <h3>Habit tips for learning</h3>
+    <ul>${HABIT_TIPS.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>`;
+}
+
+function openHabitModal(editId = null) {
+  const habit = editId ? state.habits.find((h) => h.id === editId) : null;
+  document.getElementById("habitModalTitle").textContent = habit ? "Edit Habit" : "Add Habit";
+  document.getElementById("habitId").value = habit?.id || "";
+  document.getElementById("habitIcon").value = habit?.icon || "📌";
+  document.getElementById("habitTitle").value = habit?.title || "";
+  document.getElementById("habitDesc").value = habit?.desc || "";
+  document.getElementById("habitModal").classList.add("open");
+}
+
+function closeHabitModal() {
+  document.getElementById("habitModal").classList.remove("open");
+}
+
 function renderPhases() {
   const list = document.getElementById("phasesList");
   list.innerHTML = getProject().phases
@@ -884,11 +1135,43 @@ function initNavigation() {
       document.querySelectorAll(".view").forEach((v) => v.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById("view-" + btn.dataset.view).classList.add("active");
+      if (btn.dataset.view === "habits") renderHabits();
     });
   });
 }
 
 function initEvents() {
+  document.getElementById("habitStreakCard").addEventListener("click", () => {
+    document.querySelector('[data-view="habits"]').click();
+  });
+
+  document.getElementById("addHabitBtn").addEventListener("click", () => openHabitModal());
+  document.getElementById("cancelHabitBtn").addEventListener("click", closeHabitModal);
+  document.getElementById("habitModal").addEventListener("click", (e) => {
+    if (e.target.id === "habitModal") closeHabitModal();
+  });
+  document.getElementById("saveHabitBtn").addEventListener("click", () => {
+    const id = document.getElementById("habitId").value;
+    const data = {
+      icon: document.getElementById("habitIcon").value.trim() || "📌",
+      title: document.getElementById("habitTitle").value.trim(),
+      desc: document.getElementById("habitDesc").value.trim(),
+      active: true,
+    };
+    if (!data.title) return alert("Habit name is required");
+
+    if (id) {
+      const habit = state.habits.find((h) => h.id === id);
+      Object.assign(habit, data);
+    } else {
+      state.habits.push({ id: uid(), ...data });
+    }
+    saveState();
+    closeHabitModal();
+    renderHabits();
+    updateHabitSidebar();
+  });
+
   document.getElementById("addTaskBtn").addEventListener("click", () => openTaskModal());
   document.getElementById("cancelTaskBtn").addEventListener("click", closeTaskModal);
   document.getElementById("taskModal").addEventListener("click", (e) => {

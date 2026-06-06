@@ -10,6 +10,7 @@ Personal learning and task tracker for technical projects — built to learn by 
 ## Features
 
 - Task tracking by learning phase
+- **Habit Builder** — daily learning habits, streaks, 7-day progress
 - Learning notes (saved in browser)
 - Architecture reference diagrams
 - Glossary per project

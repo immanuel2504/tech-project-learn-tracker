@@ -28,6 +28,7 @@
       <nav class="nav">
         <button class="nav-btn active" data-view="overview">Overview</button>
         <button class="nav-btn" data-view="advisor">Advisor Mindset</button>
+        <button class="nav-btn" data-view="habits">Habit Builder</button>
         <button class="nav-btn" data-view="tasks">Tasks</button>
         <button class="nav-btn" data-view="notes">Notes</button>
         <button class="nav-btn" data-view="architecture">Architecture</button>
@@ -38,6 +39,12 @@
         <span class="progress-label">Project progress</span>
         <div class="progress-bar"><div class="progress-fill" id="overallProgress"></div></div>
         <span class="progress-text" id="progressText">0 / 0 tasks</span>
+      </div>
+
+      <div class="progress-card habit-streak-card" id="habitStreakCard">
+        <span class="progress-label">Today's habits</span>
+        <div class="habit-streak-value" id="habitTodayCount">0 / 0</div>
+        <span class="progress-text" id="habitStreakText">🔥 0 day streak</span>
       </div>
     </aside>
 
@@ -62,6 +69,19 @@
           <p>Trusted Advisor + Partner Mindset — how Solution Architects build real customer relationships</p>
         </header>
         <div id="advisorContent"></div>
+      </section>
+
+      <section class="view" id="view-habits">
+        <header class="page-header">
+          <h2>Habit Builder</h2>
+          <p>Build daily learning habits — consistency beats intensity</p>
+        </header>
+        <div class="habit-stats" id="habitStats"></div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="addHabitBtn">+ Add Habit</button>
+        </div>
+        <div class="habit-list" id="habitList"></div>
+        <div class="habit-tips" id="habitTips"></div>
       </section>
 
       <section class="view" id="view-tasks">
@@ -119,6 +139,23 @@
         <div class="glossary-list" id="glossaryList"></div>
       </section>
     </main>
+  </div>
+
+  <div class="modal" id="habitModal">
+    <div class="modal-content">
+      <h3 id="habitModalTitle">Add Habit</h3>
+      <input type="hidden" id="habitId" />
+      <label>Icon</label>
+      <input type="text" id="habitIcon" placeholder="📖" maxlength="4" />
+      <label>Habit name</label>
+      <input type="text" id="habitTitle" placeholder="e.g. Study 30 minutes" />
+      <label>Description</label>
+      <textarea id="habitDesc" placeholder="What does done look like today?"></textarea>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cancelHabitBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveHabitBtn">Save</button>
+      </div>
+    </div>
   </div>
 
   <div class="modal" id="taskModal">
